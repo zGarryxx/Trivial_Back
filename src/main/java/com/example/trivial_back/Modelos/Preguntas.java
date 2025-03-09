@@ -30,7 +30,12 @@ public class Preguntas {
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categorias categoria;
 
-    public void setCategoria(String categoria) {
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getPregunta() {
@@ -39,5 +44,13 @@ public class Preguntas {
 
     public void setPregunta(String pregunta) {
         this.pregunta = pregunta;
+    }
+
+    public Categorias getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(Categorias categoria) {
+        this.categoria = categoria;
     }
 }

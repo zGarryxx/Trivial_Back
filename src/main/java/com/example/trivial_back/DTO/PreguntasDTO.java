@@ -1,5 +1,6 @@
 package com.example.trivial_back.DTO;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
 // Importamos las clases de lombok
@@ -11,24 +12,10 @@ import lombok.*;
 
 public class PreguntasDTO {
 
+    // Atributos de la clase
+
+    @JsonIgnore
+    private Long id;
     private String enunciado;
-    private String categoria;
 
-    // Getter and Setter for enunciado
-    public String getEnunciado() {
-        return enunciado;
-    }
-
-    public void setEnunciado(String enunciado) {
-        this.enunciado = enunciado;
-    }
-
-    // Getter and Setter for categoria
-    public String getCategoria() {
-        return categoria;
-    }
-
-    public void setCategoria(String categoria) {
-        this.categoria = categoria;
-    }
 }

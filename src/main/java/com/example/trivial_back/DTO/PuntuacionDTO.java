@@ -9,6 +9,8 @@ import lombok.*;
 @ToString
 public class PuntuacionDTO {
 
+    // Atributos de la clase
+
     private java.time.LocalDateTime fecha;
     private String nombreUsuario;
     private int aciertos;

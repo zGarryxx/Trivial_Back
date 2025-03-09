@@ -28,6 +28,7 @@ public class Respuestas {
     private String respuesta;
 
     @Column(name = "estado", nullable = false)
+    @Enumerated(EnumType.ORDINAL)
     private Estado estado;
 
     @ManyToOne

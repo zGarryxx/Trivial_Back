@@ -14,29 +14,27 @@ import java.time.LocalDateTime;
 @Table(name = "puntuacion", schema = "trivial")
 public class Puntuacion {
 
+    // Atributos de la clase
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "nombre_usuario", nullable = false, length = 255)
+    @Column(name = "nombre_usuario", length = 255)
     private String nombreUsuario;
-
-    @ManyToOne
-    @JoinColumn(name = "categoria_id", nullable = false)
-    private Categorias categoria;
 
     @Column(name = "puntuacion")
     private Integer puntuacion;
 
-    @Column(name = "aciertos", nullable = false, columnDefinition = "INT DEFAULT 0")
-    private Integer aciertos = 0;
+    @Column(name = "aciertos", columnDefinition = "INT DEFAULT 0")
+    private Integer aciertos;
 
-    @Column(name = "fallos", nullable = false, columnDefinition = "INT DEFAULT 0")
-    private Integer fallos = 0;
+    @Column(name = "fallos", columnDefinition = "INT DEFAULT 0")
+    private Integer fallos;
 
-    @Column(name = "fecha", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime fecha = LocalDateTime.now();
+    @Column(name = "fecha", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime fecha;
 
     public Integer getPuntuacion() {
         return puntuacion;

@@ -1,5 +1,6 @@
 package com.example.trivial_back.Controladores;
 
+import com.example.trivial_back.DTO.CategoriaDTO;
 import com.example.trivial_back.DTO.PreguntasDTO;
 import com.example.trivial_back.DTO.PuntuacionDTO;
 import com.example.trivial_back.Modelos.Categorias;
@@ -9,7 +10,6 @@ import com.example.trivial_back.Servicios.TrivialService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -21,9 +21,9 @@ public class TrivialController {
     private TrivialService trivialService;
 
     // Endpoint para crear una pregunta
-    @PostMapping("/pregunta/crear")
-    public ResponseEntity<Preguntas> createPregunta(@RequestBody PreguntasDTO preguntaDTO) {
-        Preguntas nuevaPregunta = trivialService.createPregunta(preguntaDTO);
+    @PostMapping("/pregunta/crear/{categoriaId}")
+    public ResponseEntity<Preguntas> createPregunta(@PathVariable Long categoriaId, @RequestBody PreguntasDTO preguntaDTO) {
+        Preguntas nuevaPregunta = trivialService.createPregunta(categoriaId, preguntaDTO);
         return ResponseEntity.ok(nuevaPregunta);
     }
 
@@ -57,23 +57,16 @@ public class TrivialController {
 
     // Endpoint para obtener una pregunta aleatoria de una categoria
     @GetMapping("/pregunta/aleatoria/{categoria}")
-    public ResponseEntity<Preguntas> getPreguntaAleatoria(@PathVariable String categoria) {
-        Preguntas pregunta = trivialService.getPreguntaAleatoria(categoria);
-        return ResponseEntity.ok(pregunta);
+    public ResponseEntity<PreguntasDTO> getPreguntaAleatoria(@PathVariable String categoria) {
+        PreguntasDTO preguntaDTO = trivialService.getPreguntaAleatoria(categoria);
+        return ResponseEntity.ok(preguntaDTO);
     }
 
     // Endpoint para obtener una categoria aleatoria
     @GetMapping("/categoria/aleatoria")
-    public ResponseEntity<Categorias> getCategoriaAleatoria() {
-        Categorias categoria = trivialService.getCategoriaAleatoria();
-        return ResponseEntity.ok(categoria);
-    }
-
-    // Endpoint para puntuar una pregunta
-    @PostMapping("/pregunta/puntuar")
-    public ResponseEntity<Integer> puntuarPregunta(@RequestBody Preguntas pregunta, @RequestParam String respuesta, @RequestBody Puntuacion puntuacion) {
-        int puntos = trivialService.puntuarPregunta(pregunta, respuesta, puntuacion);
-        return ResponseEntity.ok(puntos);
+    public ResponseEntity<CategoriaDTO> getCategoriaAleatoria() {
+        CategoriaDTO categoriaDTO = trivialService.getCategoriaAleatoria();
+        return ResponseEntity.ok(categoriaDTO);
     }
 
     // Endpoint para listar las puntuaciones
@@ -85,14 +78,22 @@ public class TrivialController {
 
     // Endpoint para guardar un nombre de usuario
     @PostMapping("/usuario/guardar")
-    public ResponseEntity<Puntuacion> guardarNombreUsuario(@RequestParam String nombreUsuario) {
-        Puntuacion puntuacion = trivialService.guardarNombreUsuario(nombreUsuario);
-        return ResponseEntity.ok(puntuacion);
+    public ResponseEntity<PuntuacionDTO> guardarNombreUsuario(@RequestParam String nombreUsuario) {
+        PuntuacionDTO puntuacionDTO = trivialService.guardarNombreUsuario(nombreUsuario);
+        return ResponseEntity.ok(puntuacionDTO);
     }
 
+    // Endpoint para contestar una pregunta
     @PostMapping("/pregunta/contestar")
-    public ResponseEntity<Boolean> contestarPregunta(@RequestBody Preguntas pregunta, @RequestParam String respuesta) {
-        boolean esCorrecta = trivialService.contestarPregunta(pregunta, respuesta);
-        return ResponseEntity.ok(esCorrecta);
+    public ResponseEntity<String> contestarPregunta(@RequestBody PreguntasDTO preguntaDTO, @RequestParam String respuesta, @RequestParam String nombreUsuario) {
+        String resultado = trivialService.contestarPregunta(preguntaDTO, respuesta, nombreUsuario);
+        return ResponseEntity.ok(resultado);
+    }
+
+    // Endpoint para obtener el id de una pregunta por enunciado
+    @GetMapping("/pregunta/id")
+    public ResponseEntity<Long> getPreguntaIdByEnunciado(@RequestParam String enunciado) {
+        Long preguntaId = trivialService.getPreguntaIdByEnunciado(enunciado);
+        return ResponseEntity.ok(preguntaId);
     }
 }
