@@ -41,6 +41,8 @@ public class TrivialService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private Long lastPreguntaId = null;
+
     // Metodo para crear una pregunta
     public Preguntas createPregunta(CRUD_PreguntasDTO preguntaDTO) {
         if (!StringUtils.hasText(preguntaDTO.getEnunciado())) {
@@ -148,7 +150,12 @@ public class TrivialService {
                 "WHERE c.nombre = ? " +
                 "ORDER BY random() " +
                 "LIMIT 1";
-        Preguntas pregunta = jdbcTemplate.queryForObject(sql, new Object[]{categoria}, new BeanPropertyRowMapper<>(Preguntas.class));
+        Preguntas pregunta;
+        do {
+            pregunta = jdbcTemplate.queryForObject(sql, new Object[]{categoria}, new BeanPropertyRowMapper<>(Preguntas.class));
+        } while (pregunta != null && pregunta.getId().equals(lastPreguntaId));
+
+        lastPreguntaId = pregunta != null ? pregunta.getId() : null;
         return new PreguntasDTO(pregunta.getId(), pregunta.getPregunta());
     }
 
