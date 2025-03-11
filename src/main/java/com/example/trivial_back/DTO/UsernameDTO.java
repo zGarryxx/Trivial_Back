@@ -2,16 +2,15 @@ package com.example.trivial_back.DTO;
 
 import lombok.*;
 
-// Importamos las clases de lombok
 @Getter
 @Setter
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class RespuestasDTO {
+
+public class UsernameDTO {
 
     // Atributos de la clase
 
-    private PreguntasDTO pregunta;
-    private String respuesta;
+    private String nombreUsuario ;
 }

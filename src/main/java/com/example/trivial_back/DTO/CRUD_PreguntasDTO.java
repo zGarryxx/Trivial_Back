@@ -6,12 +6,15 @@ import lombok.*;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class RespuestasDTO {
+
+public class CRUD_PreguntasDTO {
 
     // Atributos de la clase
+    private String enunciado;
+    private String respuestaCorrecta;
+    private Long categoriaId;
 
-    private PreguntasDTO pregunta;
-    private String respuesta;
 }

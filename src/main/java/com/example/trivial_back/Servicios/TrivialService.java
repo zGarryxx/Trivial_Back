@@ -1,9 +1,6 @@
 package com.example.trivial_back.Servicios;
 
-import com.example.trivial_back.DTO.CategoriaDTO;
-import com.example.trivial_back.DTO.PreguntasDTO;
-import com.example.trivial_back.DTO.PuntuacionDTO;
-import com.example.trivial_back.Enum.Estado;
+import com.example.trivial_back.DTO.*;
 import com.example.trivial_back.Modelos.Categorias;
 import com.example.trivial_back.Modelos.Preguntas;
 import com.example.trivial_back.Modelos.Puntuacion;
@@ -12,6 +9,7 @@ import com.example.trivial_back.Repositorios.CategoriaRepository;
 import com.example.trivial_back.Repositorios.PreguntasRepository;
 import com.example.trivial_back.Repositorios.PuntuacionRepository;
 import com.example.trivial_back.Repositorios.RespuestasRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -44,13 +42,16 @@ public class TrivialService {
     private JdbcTemplate jdbcTemplate;
 
     // Metodo para crear una pregunta
-    public Preguntas createPregunta(Long categoriaId, PreguntasDTO preguntaDTO) {
+    public Preguntas createPregunta(CRUD_PreguntasDTO preguntaDTO) {
         if (!StringUtils.hasText(preguntaDTO.getEnunciado())) {
             throw new IllegalArgumentException("El enunciado de la pregunta no puede estar vacío");
         }
+        if (!StringUtils.hasText(preguntaDTO.getRespuestaCorrecta())) {
+            throw new IllegalArgumentException("La respuesta correcta de la pregunta no puede estar vacía");
+        }
 
         // Verificar que la categoría existe en la base de datos
-        Categorias categoria = categoriaRepository.findById(categoriaId)
+        Categorias categoria = categoriaRepository.findById(preguntaDTO.getCategoriaId())
                 .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
 
         // Verificar si la pregunta ya existe
@@ -62,8 +63,14 @@ public class TrivialService {
         Preguntas pregunta = new Preguntas();
         pregunta.setPregunta(preguntaDTO.getEnunciado());
         pregunta.setCategoria(categoria);
+        Preguntas savedPregunta = preguntasRepository.save(pregunta);
 
-        return preguntasRepository.save(pregunta);
+        Respuestas respuestaCorrecta = new Respuestas();
+        respuestaCorrecta.setPregunta(savedPregunta);
+        respuestaCorrecta.setRespuesta(preguntaDTO.getRespuestaCorrecta());
+        respuestasRepository.save(respuestaCorrecta);
+
+        return savedPregunta;
     }
 
     // Metodo para obtener todas las preguntas
@@ -85,29 +92,53 @@ public class TrivialService {
     }
 
     // Metodo para actualizar una pregunta
-    public Preguntas updatePregunta(Long id, PreguntasDTO preguntaDetails) {
-
+    @Transactional
+    public Preguntas updatePregunta(Long id, CRUD_PreguntasDTO preguntaDTO) {
         Preguntas pregunta = preguntasRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pregunta no encontrada con el ID: " + id));
-        if (!StringUtils.hasText(preguntaDetails.getEnunciado())) {
+        if (!StringUtils.hasText(preguntaDTO.getEnunciado())) {
             throw new IllegalArgumentException("El enunciado de la pregunta no puede estar vacío");
         }
-
-        // Verificar si la pregunta ya ha sido actualizada con los mismos datos
-        if (pregunta.getPregunta().equals(preguntaDetails.getEnunciado())) {
-            throw new IllegalArgumentException("La pregunta ya ha sido actualizada con estos datos");
+        if (!StringUtils.hasText(preguntaDTO.getRespuestaCorrecta())) {
+            throw new IllegalArgumentException("La respuesta correcta de la pregunta no puede estar vacía");
         }
 
-        pregunta.setPregunta(preguntaDetails.getEnunciado());
-        return preguntasRepository.save(pregunta);
+        // Verificar que la categoría existe en la base de datos
+        Categorias categoria = categoriaRepository.findById(preguntaDTO.getCategoriaId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+
+        pregunta.setPregunta(preguntaDTO.getEnunciado());
+        pregunta.setCategoria(categoria);
+        Preguntas updatedPregunta = preguntasRepository.save(pregunta);
+
+        respuestasRepository.deleteByPreguntaId(updatedPregunta.getId());
+
+        Respuestas respuestaCorrecta = new Respuestas();
+        respuestaCorrecta.setPregunta(updatedPregunta);
+        respuestaCorrecta.setRespuesta(preguntaDTO.getRespuestaCorrecta());
+        respuestasRepository.save(respuestaCorrecta);
+
+        return updatedPregunta;
     }
 
     // Metodo para eliminar una pregunta
+    @Transactional
     public void deletePregunta(Long id) {
-
         Preguntas pregunta = preguntasRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pregunta no encontrada con el ID: " + id));
+
+        respuestasRepository.deleteByPreguntaId(id);
+
         preguntasRepository.delete(pregunta);
+    }
+
+    // Metodo para obtener todas las categorias
+    public List<Categorias> getAllCategorias() {
+        List<Categorias> categorias = categoriaRepository.findAll();
+        if (categorias.isEmpty()) {
+            throw new RuntimeException("No hay categorías disponibles");
+        }
+        return categorias;
     }
 
     // Metodo para obtener una pregunta aleatoria de una categoria
@@ -140,11 +171,12 @@ public class TrivialService {
     }
 
     // Metodo para guardar un nombre de usuario
-    public PuntuacionDTO guardarNombreUsuario(String nombreUsuario) {
-        if (!StringUtils.hasText(nombreUsuario)) {
+    public PuntuacionDTO guardarNombreUsuario(UsernameDTO usernameDTO) {
+        if (usernameDTO == null || !StringUtils.hasText(usernameDTO.getNombreUsuario())) {
             throw new IllegalArgumentException("El nombre de usuario no puede estar vacío");
         }
 
+        String nombreUsuario = usernameDTO.getNombreUsuario();
         Optional<Puntuacion> existingPuntuacion = puntuacionRepository.findByNombreUsuario(nombreUsuario);
         if (existingPuntuacion.isPresent()) {
             throw new IllegalArgumentException("El nombre de usuario ya existe");
@@ -183,10 +215,8 @@ public class TrivialService {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
         logger.info("Buscando respuesta correcta para la pregunta ID: " + preguntaId);
-        Estado estadoCorrecto = Estado.fromValue(1);
-        Respuestas respuestaCorrecta = respuestasRepository.findByPreguntaIdAndEstado(preguntaId, estadoCorrecto)
-                .orElseThrow(() -> new RuntimeException("Respuesta correcta no encontrada para la pregunta ID: " + preguntaId + " con estado: " + estadoCorrecto));
-
+        Respuestas respuestaCorrecta = respuestasRepository.findByPreguntaId(preguntaId)
+                .orElseThrow(() -> new RuntimeException("Respuesta correcta no encontrada para la pregunta ID: " + preguntaId));
         if (respuestaCorrecta.getRespuesta().equalsIgnoreCase(respuesta)) {
             puntuacion.setAciertos(puntuacion.getAciertos() + 1);
             puntuacion.setPuntuacion(puntuacion.getPuntuacion() + 10);
