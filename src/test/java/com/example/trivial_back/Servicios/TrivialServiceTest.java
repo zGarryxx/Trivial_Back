@@ -295,4 +295,159 @@ public class TrivialServiceTest {
         Assertions.assertEquals("La respuesta correcta de la pregunta no puede estar vacía", ex3.getMessage());
     }
 
+    @Test
+    @DisplayName("Eliminar pregunta con ID válido y confirmar eliminación")
+    @Tag("Preguntas")
+    public void borrarPreguntaPositiva() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO galan = new CRUD_PreguntasDTO();
+        galan.setEnunciado("¿Cual sera el juego del año en el 2027?");
+        galan.setRespuestaCorrecta("GTA VI");
+        galan.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(galan);
+
+        Preguntas pregunta = preguntasRepository.findByPregunta("¿Cual sera el juego del año en el 2027?").orElseThrow();
+
+        // WHEN
+        String mensaje = trivialService.deletePregunta(pregunta.getId());
+
+        // THEN
+        Assertions.assertEquals("Pregunta eliminada correctamente", mensaje);
+        Assertions.assertFalse(preguntasRepository.findById(pregunta.getId()).isPresent());
+        Assertions.assertFalse(respuestasRepository.findByPreguntaId(pregunta.getId()).isPresent());
+    }
+
+    @Test
+    @DisplayName("Eliminar pregunta con ID inexistente y recibir error")
+    @Tag("Preguntas")
+    public void borrarPreguntaNegativa() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO futbol = new CRUD_PreguntasDTO();
+        futbol.setEnunciado("¿Quien es el jugador mas joven del Barcelona?");
+        futbol.setRespuestaCorrecta("Lamine Yamal");
+        futbol.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(futbol);
+
+        Preguntas pregunta = preguntasRepository.findByPregunta("¿Quien es el jugador mas joven del Barcelona?").orElseThrow();
+        Long idInexistente = pregunta.getId() + 1000;
+
+        // WHEN
+        Exception exception = Assertions.assertThrows(RuntimeException.class, () -> trivialService.deletePregunta(idInexistente));
+
+        // THEN
+        Assertions.assertEquals("Pregunta no encontrada con el ID: " + idInexistente, exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Retornar lista de categorías válidas")
+    @Tag("Categorias")
+    public void obtenerAllCategoriasPositiva() {
+
+        // GIVEN
+        Categorias categoria1 = new Categorias();
+        categoria1.setNombre("Ciencia");
+        categoriaRepository.save(categoria1);
+
+        Categorias categoria2 = new Categorias();
+        categoria2.setNombre("Literatura");
+        categoriaRepository.save(categoria2);
+
+        // WHEN
+        List<Categorias> categorias = trivialService.getAllCategorias();
+
+        // THEN
+        Assertions.assertNotNull(categorias);
+        Assertions.assertEquals(2, categorias.size());
+        Assertions.assertTrue(
+                categorias.stream().anyMatch(c -> c.getNombre().equals("Ciencia"))
+        );
+        Assertions.assertTrue(
+                categorias.stream().anyMatch(c -> c.getNombre().equals("Literatura"))
+        );
+    }
+
+    @Test
+    @DisplayName("Lista vacía si no hay categorías en la tabla Categorias en la BD")
+    @Tag("Categorias")
+    public void obtenerAllCategoriasNegativa() {
+
+        // GIVEN
+
+        // WHEN
+        List<Categorias> categorias = trivialService.getAllCategorias();
+
+        // THEN
+        Assertions.assertNotNull(categorias);
+        Assertions.assertTrue(categorias.isEmpty(), "No hay categorías disponibles");
+    }
+
+    @Test
+    @DisplayName("Retornar pregunta al azar según la categoría elegida")
+    @Tag("Preguntas")
+    public void obtenerPreguntaAleatoriaPositiva() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO futbol = new CRUD_PreguntasDTO();
+        futbol.setEnunciado("¿Quien es el jugador mas joven del Barcelona?");
+        futbol.setRespuestaCorrecta("Lamine Yamal");
+        futbol.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(futbol);
+
+        CRUD_PreguntasDTO tenis = new CRUD_PreguntasDTO();
+        tenis.setEnunciado("¿Cuántos sets se juegan en un partido de Grand Slam?");
+        tenis.setRespuestaCorrecta("5");
+        tenis.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(tenis);
+
+
+        CRUD_PreguntasDTO baloncesto = new CRUD_PreguntasDTO();
+        baloncesto.setEnunciado("¿Cuántos jugadores hay en un equipo de baloncesto?");
+        baloncesto.setRespuestaCorrecta("5");
+        baloncesto.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(baloncesto);
+
+        // WHEN
+        var preguntaAleatoria = trivialService.getPreguntaAleatoria("Deportes");
+
+        // THEN
+        Assertions.assertNotNull(preguntaAleatoria);
+        Assertions.assertTrue(
+                preguntaAleatoria.getEnunciado().equals("¿Quien es el jugador mas joven del Barcelona?")
+                        || preguntaAleatoria.getEnunciado().equals("¿Cuántos sets se juegan en un partido de Grand Slam?")
+                        || preguntaAleatoria.getEnunciado().equals("¿Cuántos jugadores hay en un equipo de baloncesto?")
+        );
+    }
+
+    @Test
+    @DisplayName("No retornar pregunta si no hay preguntas en la categoría elegida")
+    @Tag("Preguntas")
+    public void obtenerPreguntaAleatoriaNegativa() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Cine");
+        categoria = categoriaRepository.save(categoria);
+
+        // WHEN
+        Exception exception = Assertions.assertThrows(Exception.class, () -> trivialService.getPreguntaAleatoria("Cine"));
+
+        // THEN
+        Assertions.assertNotNull(exception);
+        Assertions.assertNotNull(categoria.getId());
+        Assertions.assertEquals("Cine", categoria.getNombre());
+    }
 }

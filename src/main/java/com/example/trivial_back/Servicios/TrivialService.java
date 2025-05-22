@@ -122,23 +122,23 @@ public class TrivialService {
         return updatedPregunta;
     }
 
-    // Metodo para eliminar una pregunta
+    // Méthod para eliminar una pregunta y devolver mensaje de confirmación
     @Transactional
-    public void deletePregunta(Long id) {
+    public String deletePregunta(Long id) {
+
         Preguntas pregunta = preguntasRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pregunta no encontrada con el ID: " + id));
 
         respuestasRepository.deleteByPreguntaId(id);
-
         preguntasRepository.delete(pregunta);
+
+        return "Pregunta eliminada correctamente";
     }
 
-    // Metodo para obtener todas las categorias
     public List<Categorias> getAllCategorias() {
+
         List<Categorias> categorias = categoriaRepository.findAll();
-        if (categorias.isEmpty()) {
-            throw new RuntimeException("No hay categorías disponibles");
-        }
+
         return categorias;
     }
 
