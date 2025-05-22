@@ -113,12 +113,11 @@ public class TrivialService {
         pregunta.setCategoria(categoria);
         Preguntas updatedPregunta = preguntasRepository.save(pregunta);
 
-        respuestasRepository.deleteByPreguntaId(updatedPregunta.getId());
-
-        Respuestas respuestaCorrecta = new Respuestas();
-        respuestaCorrecta.setPregunta(updatedPregunta);
-        respuestaCorrecta.setRespuesta(preguntaDTO.getRespuestaCorrecta());
-        respuestasRepository.save(respuestaCorrecta);
+        // Aquí actualizas la respuesta existente en vez de borrarla y crear una nueva
+        Respuestas respuesta = respuestasRepository.findByPreguntaId(updatedPregunta.getId())
+                .orElseThrow(() -> new RuntimeException("Respuesta correcta no encontrada para la pregunta ID: " + updatedPregunta.getId()));
+        respuesta.setRespuesta(preguntaDTO.getRespuestaCorrecta());
+        respuestasRepository.save(respuesta);
 
         return updatedPregunta;
     }
