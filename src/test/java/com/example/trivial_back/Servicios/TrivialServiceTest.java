@@ -1,10 +1,14 @@
 package com.example.trivial_back.Servicios;
 
 import com.example.trivial_back.DTO.CRUD_PreguntasDTO;
+import com.example.trivial_back.DTO.PuntuacionDTO;
+import com.example.trivial_back.DTO.UsernameDTO;
 import com.example.trivial_back.Modelos.Categorias;
 import com.example.trivial_back.Modelos.Preguntas;
+import com.example.trivial_back.Modelos.Puntuacion;
 import com.example.trivial_back.Repositorios.CategoriaRepository;
 import com.example.trivial_back.Repositorios.PreguntasRepository;
+import com.example.trivial_back.Repositorios.PuntuacionRepository;
 import com.example.trivial_back.Repositorios.RespuestasRepository;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +39,9 @@ public class TrivialServiceTest {
 
     @Autowired
     private RespuestasRepository respuestasRepository;
+
+    @Autowired
+    private PuntuacionRepository puntuacionRepository;
 
     @Test
     @DisplayName("Test de crear pregunta positivo")
@@ -450,4 +458,155 @@ public class TrivialServiceTest {
         Assertions.assertNotNull(categoria.getId());
         Assertions.assertEquals("Cine", categoria.getNombre());
     }
+
+    @Test
+    @DisplayName("Retornar una categoría válida aleatoriamente")
+    @Tag("Categorias")
+    public void obtenerCategoriaAleatoriaPositiva() {
+
+        // GIVEN
+        Categorias cine = new Categorias();
+        cine.setNombre("Cine");
+        categoriaRepository.save(cine);
+
+        Categorias musica = new Categorias();
+        musica.setNombre("Música");
+        categoriaRepository.save(musica);
+
+        Categorias literatura = new Categorias();
+        literatura.setNombre("Literatura");
+        categoriaRepository.save(literatura);
+
+        // WHEN
+        var ramdom = trivialService.getCategoriaAleatoria();
+
+        // THEN
+        Assertions.assertNotNull(ramdom);
+        Assertions.assertTrue(
+                ramdom.getNombre().equals("Cine") ||
+                        ramdom.getNombre().equals("Música") ||
+                        ramdom.getNombre().equals("Literatura")
+        );
+    }
+
+    @Test
+    @DisplayName("No retornar categoría si no hay categorías registradas")
+    @Tag("Categorias")
+    public void obtenerCategoriaAleatoriaNegativa() {
+
+        // GIVEN
+
+        // WHEN
+        Exception exception = Assertions.assertThrows(Exception.class, () -> trivialService.getCategoriaAleatoria());
+
+        // THEN
+        Assertions.assertNotNull(exception);
+    }
+
+    @Test
+    @DisplayName("Retornar lista de puntuaciones con usuarios que jugaron al trivial")
+    @Tag("Puntuaciones")
+    public void obtenerTodasPuntuacionesPositiva() {
+
+        // GIVEN
+        PuntuacionDTO Juanito = new PuntuacionDTO(
+                LocalDateTime.now(),
+                "Juanito",
+                5,
+                2,
+                50
+        );
+        PuntuacionDTO Carlos = new PuntuacionDTO(
+                LocalDateTime.now(),
+                "Carlos",
+                3,
+                1,
+                30
+        );
+
+        PuntuacionDTO Maria = new PuntuacionDTO(
+                LocalDateTime.now(),
+                "Maria",
+                10,
+                5,
+                100
+        );
+
+        // Simula que el repositorio retorna estos datos
+        puntuacionRepository.save(new Puntuacion(Juanito));
+        puntuacionRepository.save(new Puntuacion(Carlos));
+        puntuacionRepository.save(new Puntuacion(Maria));
+
+        // WHEN
+        List<PuntuacionDTO> puntuaciones = trivialService.getAllPuntuaciones();
+
+        // THEN
+        Assertions.assertNotNull(puntuaciones);
+        Assertions.assertEquals(3, puntuaciones.size());
+        Assertions.assertTrue(
+                puntuaciones.stream().anyMatch(p -> p.getNombreUsuario().equals("Juanito"))
+        );
+        Assertions.assertTrue(
+                puntuaciones.stream().anyMatch(p -> p.getNombreUsuario().equals("Carlos"))
+        );
+        Assertions.assertTrue(
+                puntuaciones.stream().anyMatch(p -> p.getNombreUsuario().equals("Maria"))
+        );
+    }
+
+    @Test
+    @DisplayName("Lista vacía si no hay registros de usuarios que hayan jugado al trivial")
+    @Tag("Puntuaciones")
+    public void obtenerTodasPuntuacionesNegativa() {
+
+        // GIVEN
+
+        // WHEN
+        Exception exception = Assertions.assertThrows(RuntimeException.class, () -> trivialService.getAllPuntuaciones());
+
+        // THEN
+        Assertions.assertEquals("No hay puntuaciones disponibles", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Guardar nombre de usuario válido")
+    @Tag("Puntuaciones")
+    public void guardarUsernamePositivo() {
+
+        // GIVEN
+        UsernameDTO Miguel = new UsernameDTO();
+        Miguel.setNombreUsuario("Miguel");
+
+        // WHEN
+        PuntuacionDTO resultado = trivialService.guardarNombreUsuario(Miguel);
+
+        // THEN
+        Assertions.assertNotNull(resultado);
+        Assertions.assertEquals("Miguel", resultado.getNombreUsuario());
+        Assertions.assertEquals(0, resultado.getAciertos());
+        Assertions.assertEquals(0, resultado.getFallos());
+        Assertions.assertEquals(0, resultado.getPuntuacion());
+    }
+
+    @Test
+    @DisplayName("No guardar nombre de usuario vacío o nulo")
+    @Tag("Puntuaciones")
+    public void guardarUsernameNegativa() {
+
+        // GIVEN
+        UsernameDTO Luis = new UsernameDTO();
+        Luis.setNombreUsuario("");
+        UsernameDTO Gabriel = new UsernameDTO();
+        Gabriel.setNombreUsuario(null);
+
+        // WHEN
+        Exception Vacio = Assertions.assertThrows(IllegalArgumentException.class, () -> trivialService.guardarNombreUsuario(Luis));
+        Exception Nulo = Assertions.assertThrows(IllegalArgumentException.class, () -> trivialService.guardarNombreUsuario(Gabriel));
+
+        // THEN
+        Assertions.assertEquals("El nombre de usuario no puede estar vacío", Vacio.getMessage());
+        Assertions.assertEquals("El nombre de usuario no puede estar vacío", Nulo.getMessage());
+    }
+
+
 }

@@ -1,5 +1,6 @@
 package com.example.trivial_back.Modelos;
 
+import com.example.trivial_back.DTO.PuntuacionDTO;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -46,5 +47,13 @@ public class Puntuacion {
 
     public void setNombreUsuario(String nombreUsuario) {
         this.nombreUsuario = nombreUsuario;
+    }
+
+    public Puntuacion(PuntuacionDTO dto) {
+        this.fecha = dto.getFecha();
+        this.nombreUsuario = dto.getNombreUsuario();
+        this.aciertos = dto.getAciertos();
+        this.fallos = dto.getFallos();
+        this.puntuacion = dto.getPuntuacion();
     }
 }

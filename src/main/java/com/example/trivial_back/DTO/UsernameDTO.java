@@ -13,4 +13,8 @@ public class UsernameDTO {
     // Atributos de la clase
 
     private String nombreUsuario ;
+
+    public UsernameDTO() {
+
+    }
 }
