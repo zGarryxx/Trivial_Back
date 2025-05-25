@@ -608,5 +608,115 @@ public class TrivialServiceTest {
         Assertions.assertEquals("El nombre de usuario no puede estar vacío", Nulo.getMessage());
     }
 
+    @Test
+    @DisplayName("Evaluar respuesta correcta y asignar puntaje al usuario")
+    @Tag("Puntuaciones")
+    public void contestarPreguntaPositiva() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO tenis = new CRUD_PreguntasDTO();
+        tenis.setEnunciado("¿Quien es el mejor jugadores español de tenis en la actualidad?");
+        tenis.setRespuestaCorrecta("Carlos Alcaraz");
+        tenis.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(tenis);
+
+        UsernameDTO Mario = new UsernameDTO();
+        Mario.setNombreUsuario("Mario");
+        trivialService.guardarNombreUsuario(Mario);
+
+        // WHEN
+        var pregunta = trivialService.getPreguntaAleatoria("Deportes");
+        String resultado = trivialService.contestarPregunta(pregunta, "Carlos Alcaraz", "Mario");
+
+        // THEN
+        Assertions.assertEquals("¡Respuesta correcta! Has ganado 10 puntos.", resultado);
+        Puntuacion puntuacion = puntuacionRepository.findByNombreUsuario("Mario").orElseThrow();
+        Assertions.assertEquals(1, puntuacion.getAciertos());
+        Assertions.assertEquals(10, puntuacion.getPuntuacion());
+    }
+
+    @Test
+    @DisplayName("Responder con opción inválida y mostrar mensaje de error")
+    @Tag("Puntuaciones")
+    public void contestarPreguntaNegativa() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO padel  = new CRUD_PreguntasDTO();
+        padel.setEnunciado("¿Quienes son los mejores jugadores españoles de padel actualmente?");
+        padel.setRespuestaCorrecta("Galan y Tapia");
+        padel.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(padel);
+
+        UsernameDTO Miguel = new UsernameDTO();
+        Miguel.setNombreUsuario("Miguel");
+        trivialService.guardarNombreUsuario(Miguel);
+
+        // WHEN
+        var pregunta = trivialService.getPreguntaAleatoria("Deportes");
+        String resultado = trivialService.contestarPregunta(pregunta, "Chingotto", "Miguel");
+
+        // THEN
+        Assertions.assertEquals("Respuesta incorrecta. Inténtalo de nuevo.", resultado);
+        Puntuacion puntuacion = puntuacionRepository.findByNombreUsuario("Miguel").orElseThrow();
+        Assertions.assertEquals(1, puntuacion.getFallos());
+        Assertions.assertEquals(0, puntuacion.getPuntuacion());
+    }
+
+    @Test
+    @DisplayName("Retornar ID correcto al ingresar enunciado válido")
+    @Tag("Preguntas")
+    public void obtenerPreguntaPorIdPositiva() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO tenis = new CRUD_PreguntasDTO();
+        tenis.setEnunciado("¿Cual es el primer golpe realizado en un partido de tenis al empezar?");
+        tenis.setRespuestaCorrecta("Saque");
+        tenis.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(tenis);
+
+        // WHEN
+        Long idPregunta = trivialService.getPreguntaIdByEnunciado("¿Cual es el primer golpe realizado en un partido de tenis al empezar?");
+
+        // THEN
+        Preguntas pregunta = preguntasRepository.findByPregunta("¿Cual es el primer golpe realizado en un partido de tenis al empezar?").orElseThrow();
+        Assertions.assertEquals(pregunta.getId(), idPregunta);
+    }
+
+    @Test
+    @DisplayName("Buscar enunciado inexistente y recibir error con excepción")
+    @Tag("Preguntas")
+    public void obtenerPreguntaPorIdNegativa() {
+
+        // GIVEN
+        Categorias categoria = new Categorias();
+        categoria.setNombre("Deportes");
+        categoria = categoriaRepository.save(categoria);
+
+        CRUD_PreguntasDTO padel = new CRUD_PreguntasDTO();
+        padel.setEnunciado("¿Como se llama el golpe el cual realiza un jugador para que la bola salga por el muro lateral?");
+        padel.setRespuestaCorrecta("X3");
+        padel.setCategoriaId(categoria.getId());
+        trivialService.createPregunta(padel);
+
+        // WHEN
+        Exception exception = Assertions.assertThrows(RuntimeException.class, () ->
+                trivialService.getPreguntaIdByEnunciado("Enunciado que no existe")
+        );
+
+        // THEN
+        Assertions.assertEquals("Pregunta no encontrada con el enunciado: Enunciado que no existe", exception.getMessage());
+    }
 
 }
